@@ -1,0 +1,10 @@
+services:
+  cluster-chat:
+    image: cluster-chat:local
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      # SQLite database and uploaded files
+      - ./data:/data
+    restart: unless-stopped

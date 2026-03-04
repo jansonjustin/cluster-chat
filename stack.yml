@@ -1,0 +1,30 @@
+services:
+  cluster-chat:
+    image: registry.example.com/cluster-chat:local
+    volumes:
+      # SQLite database and uploaded files — use a path on shared/NFS storage
+      # if running multi-node so the data follows the container
+      - /mnt/data/cluster-chat:/data
+    networks:
+      - swarm-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.cluster-chat.rule=Host(`chat.example.com`)"
+        - "traefik.http.routers.cluster-chat.entrypoints=websecure"
+        - "traefik.http.routers.cluster-chat.tls=true"
+        - "traefik.http.routers.cluster-chat.tls.certresolver=step"
+        - "traefik.http.services.cluster-chat-svc.loadbalancer.server.port=80"
+        - "traefik.http.routers.cluster-chat.service=cluster-chat-svc"
+
+networks:
+  swarm-net:
+    name: swarm-net
+    external: true
