@@ -1,0 +1,10 @@
+Options -Indexes
+
+# Route /uploads/* to the data volume
+RewriteEngine On
+RewriteRule ^uploads/(.+)$ /data-proxy.php?file=$1 [L,QSA]
+
+<FilesMatch "^db\.php$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

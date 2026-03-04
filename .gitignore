@@ -1,0 +1,11 @@
+# PHP
+vendor/
+.env
+*.log
+# General
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+*.log
