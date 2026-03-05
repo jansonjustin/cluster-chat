@@ -1,6 +1,3 @@
-============================================================
-# Cluster Chat — PHP 8.3 + Apache ============================================================
-
 FROM php:8.3-apache
 
 # Install PHP extensions + curl for proxying to Ollama
