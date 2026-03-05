@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# cluster-chat quickstart
-# Clones the repo, builds the image, and runs it locally.
+# cluster-chat quickstart — https://github.com/jansonjustin/cluster-chat
+# Clones the repo, builds the image, and starts the container.
 # Requirements: git, docker
-# Usage: curl -fsSL https://raw.githubusercontent.com/yourusername/cluster-chat/main/quickstart.sh | bash
+#
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/jansonjustin/cluster-chat/main/quickstart.sh | bash
+#
+# Options (env vars):
+#   PORT=9090      — host port to bind (default: 8080)
+#   DATA_DIR=...   — where to store data (default: ./cluster-chat-data)
 
 set -euo pipefail
 
@@ -25,16 +31,22 @@ for cmd in git docker; do
   fi
 done
 
-# Check if a container with this name is already running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
-  echo "  A container named '$CONTAINER' is already running."
-  echo "  Stop it first with: docker rm -f $CONTAINER"
+# Check for port conflict before we do any work
+if docker run --rm --network host alpine sh -c "nc -z 0.0.0.0 $PORT 2>/dev/null && exit 0 || exit 1" 2>/dev/null; then
+  echo "  ERROR: Port $PORT is already in use." >&2
+  echo "  Run with a different port: PORT=9090 bash quickstart.sh" >&2
   exit 1
 fi
 
-# Clone
-if [ -d "cluster-chat" ]; then
-  echo "  Directory 'cluster-chat' already exists, pulling latest..."
+# Remove any leftover container from a previous failed run
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+  echo "  Found existing container '$CONTAINER' — removing it..."
+  docker rm -f "$CONTAINER"
+fi
+
+# Clone or update
+if [ -d "cluster-chat/.git" ]; then
+  echo "  Found existing repo, pulling latest..."
   git -C cluster-chat pull
 else
   echo "  Cloning $REPO..."
@@ -67,11 +79,12 @@ echo ""
 echo "  Open http://localhost:${PORT} in your browser."
 echo ""
 echo "  Get started:"
-echo "    1. Go to /models.php and add a model (point it at your Ollama or OpenAI-compatible host)"
-echo "    2. Go to /agents.php and create an agent"
-echo "    3. Select the agent on the main page and start chatting"
+echo "    1. Go to http://localhost:${PORT}/models.php — add a model"
+echo "       (point it at your Ollama host, e.g. http://ollama.local:11434)"
+echo "    2. Go to http://localhost:${PORT}/agents.php — create an agent"
+echo "    3. Back on the main page, select your agent and start chatting"
 echo ""
 echo "  Data is stored in: $DATA_DIR"
-echo "  To stop:  docker rm -f $CONTAINER"
-echo "  To update: git pull && docker build -t $IMAGE . && docker rm -f $CONTAINER && docker run ..."
+echo "  To stop:           docker rm -f $CONTAINER"
+echo "  To update:         git -C cluster-chat pull && docker build -t $IMAGE cluster-chat && docker rm -f $CONTAINER && bash quickstart.sh"
 echo ""
