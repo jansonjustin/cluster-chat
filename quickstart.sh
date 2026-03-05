@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-REPO="https://github.com/yourusername/cluster-chat.git"
+REPO="https://github.com/jansonjustin/cluster-chat.git"
 IMAGE="cluster-chat:local"
 CONTAINER="cluster-chat"
 PORT="${PORT:-8080}"

@@ -36,19 +36,25 @@ Deployed as a Docker Swarm stack behind Traefik with internal TLS via step-ca.
 
 ### Quick start (Docker)
 
-The fastest way to try cluster-chat. Clones the repo, builds the image, and runs it — one command:
+The repo includes `quickstart.sh` which handles everything — clones the repo, builds the image, and starts the container. Requirements: `git` and `docker`.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/cluster-chat/main/quickstart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jansonjustin/cluster-chat/main/quickstart.sh | bash
 ```
 
-Or with a custom port or data directory:
+Or if you've already cloned the repo:
 
 ```bash
-PORT=9090 DATA_DIR=~/cluster-chat-data bash quickstart.sh
+bash quickstart.sh
 ```
 
-Then open `http://localhost:8080`, go to Models to add a host, create an agent on the Agents page, and start chatting. Data is persisted in `./cluster-chat-data` by default.
+Override the defaults with env vars:
+
+```bash
+PORT=9090 DATA_DIR=~/my-chat-data bash quickstart.sh
+```
+
+Once running, open `http://localhost:8080`, go to **Models** to point it at an Ollama or OpenAI-compatible host, create an **Agent**, and start chatting. Data is saved in `./cluster-chat-data` by default and survives restarts.
 
 ---
 
@@ -57,7 +63,7 @@ Then open `http://localhost:8080`, go to Models to add a host, create an agent o
 Requires PHP 8.3+ with the `pdo_sqlite`, `curl`, and `fileinfo` extensions, and Apache with `mod_rewrite` enabled.
 
 ```bash
-git clone https://github.com/yourusername/cluster-chat.git
+git clone https://github.com/jansonjustin/cluster-chat.git
 cp -r cluster-chat/src/* /var/www/html/
 mkdir -p /var/www/html/data/uploads
 chown -R www-data:www-data /var/www/html/data
@@ -70,7 +76,7 @@ chown -R www-data:www-data /var/www/html/data
 Uses `docker-compose.yml` — no Swarm required. Edit the file to set your port and data path, then:
 
 ```bash
-git clone https://github.com/yourusername/cluster-chat.git
+git clone https://github.com/jansonjustin/cluster-chat.git
 cd cluster-chat
 # Edit docker-compose.yml — set ports and volume path
 docker compose up -d
@@ -85,7 +91,7 @@ Uses `stack.yml`, which adds `deploy:` blocks for placement, restart policy, and
 > **Note:** `docker-compose.yml` and `stack.yml` are separate files. Use the one that matches your setup.
 
 ```bash
-git clone https://github.com/yourusername/cluster-chat.git
+git clone https://github.com/jansonjustin/cluster-chat.git
 cd cluster-chat
 
 # Build and push to your registry
