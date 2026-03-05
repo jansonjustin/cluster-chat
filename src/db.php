@@ -9,7 +9,7 @@ function get_db(): PDO {
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $db->exec('PRAGMA journal_mode=WAL');
-        $db->exec('PRAGMA foreign_keys=ON');
+        $db->exec('PRAGMA foreign_keys=OFF'); // re-enabled at end of init_db
         init_db($db);
     }
     return $db;
@@ -70,38 +70,37 @@ function init_db(PDO $db): void {
         $db->exec("DELETE FROM models WHERE host_url = '__migrate_test__'");
     } catch (PDOException $e) {
         // wyoming not accepted — recreate table without the restrictive CHECK
-        $db->exec("
-            PRAGMA foreign_keys=OFF;
-            BEGIN;
+        // FK enforcement is already off for the whole init — just do the rename dance
+        $db->exec("BEGIN;
             CREATE TABLE models_new (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 host_url     TEXT NOT NULL,
                 model_name   TEXT NOT NULL,
                 display_name TEXT NOT NULL,
-                type         TEXT NOT NULL CHECK(type IN ('chat','tts','whisper','vision')),
+                type         TEXT NOT NULL,
                 api_format   TEXT NOT NULL DEFAULT 'ollama',
                 created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             INSERT INTO models_new SELECT * FROM models;
             DROP TABLE models;
             ALTER TABLE models_new RENAME TO models;
-            COMMIT;
-            PRAGMA foreign_keys=ON;
-        ");
+            COMMIT;");
     }
 
     // Seed default models if table is empty
     $count = $db->query('SELECT COUNT(*) FROM models')->fetchColumn();
     if ($count == 0) {
-        $db->exec("
-            INSERT INTO models (host_url, model_name, display_name, type, api_format) VALUES
-            ('http://friendlyai:11434', 'llama3.2:latest', 'Llama 3.2', 'chat', 'ollama'),
-            ('http://friendlyai:11434', 'llava:latest', 'LLaVA Vision', 'vision', 'ollama');
-
-            INSERT INTO agents (display_name, chat_model_id, system_prompt, avatar_color) VALUES
-            ('Cluster Assistant', 1, 'You are a helpful assistant for a homelab Docker Swarm cluster environment. Be concise and technical when appropriate.', '#00c8ff');
-        ");
+        // Insert models first, then agent — FK enforcement is off during init
+        // so order doesn't matter, but explicit ordering is cleaner.
+        $db->exec("INSERT INTO models (host_url, model_name, display_name, type, api_format) VALUES
+            ('http://localhost:11434', 'llama3.2:latest', 'Llama 3.2', 'chat', 'ollama'),
+            ('http://localhost:11434', 'llava:latest', 'LLaVA Vision', 'vision', 'ollama');");
+        $db->exec("INSERT INTO agents (display_name, chat_model_id, system_prompt, avatar_color) VALUES
+            ('Assistant', 1, 'You are a helpful assistant.', '#00c8ff');");
     }
+
+    // Re-enable foreign keys now that all tables and seed data are in place
+    $db->exec('PRAGMA foreign_keys=ON');
 }
 
 function json_response(mixed $data, int $status = 200): void {
